@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 
+// Caesar Cipher Component
 const CaesarCipher = ({ text }) => {
   const [shift, setShift] = useState(0);
   const [encryptedText, setEncryptedText] = useState("");
@@ -50,10 +51,12 @@ const CaesarCipher = ({ text }) => {
     // Add more bigrams as needed
   };
 
+  // Handle changes to the shift input
   const handleShiftChange = (event) => {
     setShift(Number(event.target.value));
   };
 
+  // Function to encrypt text using the Caesar Cipher
   const encryptCaesarCipher = (text, shift) => {
     return text.replace(/[a-zA-Z]/g, (char) => {
       const start = char <= "Z" ? 65 : 97;
@@ -63,13 +66,15 @@ const CaesarCipher = ({ text }) => {
     });
   };
 
-  const calculateFrequencies = (text) => {
+  // Function to calculate the frequency of letters in a given text
+  const calculateLetterFrequencies = (text) => {
     const frequencies = {};
-    const totalLetters = text.length;
+    let totalLetters = 0;
 
     for (let char of text.toLowerCase()) {
       if (char >= "a" && char <= "z") {
         frequencies[char] = (frequencies[char] || 0) + 1;
+        totalLetters += 1;
       }
     }
 
@@ -80,6 +85,7 @@ const CaesarCipher = ({ text }) => {
     return frequencies;
   };
 
+  // Function to calculate the chi-squared statistic for comparing observed and expected frequencies
   const chiSquared = (observed, expected) => {
     let chiSquared = 0;
 
@@ -93,6 +99,7 @@ const CaesarCipher = ({ text }) => {
     return chiSquared;
   };
 
+  // Brute Force Analysis to decrypt the text
   const analyzeCaesarCipher = (ciphertext) => {
     let bestShift = 0;
     let lowestChiSquared = Infinity;
@@ -106,7 +113,7 @@ const CaesarCipher = ({ text }) => {
         );
       });
 
-      const observedFrequencies = calculateFrequencies(decryptedText);
+      const observedFrequencies = calculateLetterFrequencies(decryptedText);
       const chiSquaredValue = chiSquared(
         observedFrequencies,
         englishFrequencies
@@ -122,6 +129,29 @@ const CaesarCipher = ({ text }) => {
     return { bestShift, bestDecryption };
   };
 
+  // Improved Linguistic Analysis to decrypt the text by guessing 'e'
+  const linguisticAnalyzeCaesarCipher = (ciphertext) => {
+    const observedFrequencies = calculateLetterFrequencies(ciphertext);
+    const mostFrequentLetter = Object.keys(observedFrequencies).reduce((a, b) =>
+      observedFrequencies[a] > observedFrequencies[b] ? a : b
+    );
+
+    // Calculate shift assuming the most frequent letter is 'e'
+    const shift =
+      (mostFrequentLetter.charCodeAt(0) - "e".charCodeAt(0) + 26) % 26;
+
+    // Decrypt the text with the inferred shift
+    const decryptedText = ciphertext.replace(/[a-zA-Z]/g, (char) => {
+      const start = char <= "Z" ? 65 : 97;
+      return String.fromCharCode(
+        ((char.charCodeAt(0) - start - shift + 26) % 26) + start
+      );
+    });
+
+    return { bestShift: shift, bestDecryption: decryptedText };
+  };
+
+  // Handle encryption button click
   const handleEncrypt = () => {
     const encrypted = encryptCaesarCipher(text, shift);
     setEncryptedText(encrypted);
@@ -130,76 +160,21 @@ const CaesarCipher = ({ text }) => {
     );
   };
 
+  // Handle brute force analysis button click
   const handleBruteForceAnalyze = () => {
     const analysis = analyzeCaesarCipher(encryptedText);
     setBestShift(analysis.bestShift);
     setBestDecryptedText(analysis.bestDecryption);
   };
 
-  const calculateBigramFrequencies = (text) => {
-    const frequencies = {};
-    const totalBigrams = text.length - 1;
-
-    for (let i = 0; i < text.length - 1; i++) {
-      const bigram = text.slice(i, i + 2).toLowerCase();
-      if (frequencies[bigram]) {
-        frequencies[bigram] += 1;
-      } else {
-        frequencies[bigram] = 1;
-      }
-    }
-
-    for (const bigram in frequencies) {
-      frequencies[bigram] /= totalBigrams;
-    }
-
-    return frequencies;
-  };
-
-  const scoreTextWithBigrams = (text) => {
-    const observedFrequencies = calculateBigramFrequencies(text);
-    let score = 0;
-
-    for (const bigram in observedFrequencies) {
-      if (bigramFrequencies[bigram]) {
-        score += observedFrequencies[bigram] * bigramFrequencies[bigram];
-      }
-    }
-
-    return score;
-  };
-
-  const linguisticAnalyzeCaesarCipher = (ciphertext) => {
-    let bestShift = 0;
-    let highestScore = -Infinity;
-    let bestDecryption = "";
-
-    for (let shift = 0; shift < 26; shift++) {
-      const decryptedText = ciphertext.replace(/[a-zA-Z]/g, (char) => {
-        const start = char <= "Z" ? 65 : 97;
-        return String.fromCharCode(
-          ((char.charCodeAt(0) - start - shift + 26) % 26) + start
-        );
-      });
-
-      const score = scoreTextWithBigrams(decryptedText);
-
-      if (score > highestScore) {
-        highestScore = score;
-        bestShift = shift;
-        bestDecryption = decryptedText;
-      }
-    }
-
-    return { bestShift, bestDecryption };
-  };
-
+  // Handle linguistic analysis button click
   const handleLinguisticAnalyze = () => {
     const analysis = linguisticAnalyzeCaesarCipher(encryptedText);
     setBestShift(analysis.bestShift);
     setBestDecryptedText(analysis.bestDecryption);
   };
 
+  // Render the Caesar Cipher component
   return (
     <div className="caesar-cipher-container">
       <h3>Caesar Cipher</h3>
